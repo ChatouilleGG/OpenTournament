@@ -27,6 +27,12 @@
 #include "Widgets/Images/SThrobber.h"
 #include "Blueprint/UserWidget.h"
 
+#define USE_MOVIE_PLAYER 0
+
+#if USE_MOVIE_PLAYER
+    #include <MoviePlayer.h>
+#endif
+
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LoadingScreenManager)
 
 DECLARE_LOG_CATEGORY_EXTERN(LogLoadingScreen, Log, All);
@@ -195,6 +201,8 @@ void ULoadingScreenManager::HandlePreLoadMap(const FWorldContext& WorldContext, 
 	{
 		bCurrentlyInLoadMap = true;
 
+        LoadingMapName = MapName;
+
 		// Update the loading screen immediately if the engine is initialized
 		if (GEngine->IsInitialized())
 		{
@@ -208,6 +216,7 @@ void ULoadingScreenManager::HandlePostLoadMap(UWorld* World)
 	if ((World != nullptr) && (World->GetGameInstance() == GetGameInstance()))
 	{
 		bCurrentlyInLoadMap = false;
+        LoadingMapName = "";
 	}
 }
 
@@ -504,9 +513,33 @@ void ULoadingScreenManager::ShowLoadingScreen()
 			LoadingScreenWidget = SNew(SThrobber);
 		}
 
-		// Add to the viewport at a high ZOrder to make sure it is on top of most things
-		UGameViewportClient* GameViewportClient = LocalGameInstance->GetGameViewportClient();
-		GameViewportClient->AddViewportWidgetContent(LoadingScreenWidget.ToSharedRef(), Settings->LoadingScreenZOrder);
+        // Only use MoviePlayer for map loads - otherwise a standard UserWidget will do the job fine
+
+#if USE_MOVIE_PLAYER
+        bCurrentLoadingIsMoviePlayer = (USE_MOVIE_PLAYER && !LoadingMapName.IsEmpty());
+        if (bCurrentLoadingIsMoviePlayer)
+        {
+            FLoadingScreenAttributes LoadingScreen;
+            LoadingScreen.WidgetLoadingScreen = LoadingScreenWidget;
+
+            //NOTE: The 3 parameters below are required if we want to fully control the loading screen
+            // In that scenario, the MoviePlayer must Tick the engine back (requires bAllowEngineTick=true) until we call ForceCompletion()
+            LoadingScreen.bAutoCompleteWhenLoadingCompletes = false;
+            LoadingScreen.bWaitForManualStop = true;
+            LoadingScreen.bAllowEngineTick = true;
+            // Without these, the MoviePlayer takes control of Ticking, and issues will arise :
+            // - if loading a map, MoviePlayer waits for ForceCompletion() which we're not calling because we're not ticking
+            // - if shown for a different reason, MoviePlayer ain't waiting for anything and we're stuck in deadlock
+
+            GetMoviePlayer()->SetupLoadingScreen(LoadingScreen);
+        }
+        else
+#endif
+        {
+            // Add to the viewport at a high ZOrder to make sure it is on top of most things
+            UGameViewportClient* GameViewportClient = LocalGameInstance->GetGameViewportClient();
+            GameViewportClient->AddViewportWidgetContent(LoadingScreenWidget.ToSharedRef(), Settings->LoadingScreenZOrder);
+        }
 
 		ChangePerformanceSettings(/*bEnableLoadingScreen=*/ true);
 
@@ -539,10 +572,20 @@ void ULoadingScreenManager::HideLoadingScreen()
 
 		UE_LOG(LogLoadingScreen, Log, TEXT("Garbage Collecting before dropping load screen"));
 		GEngine->ForceGarbageCollection(true);
-
-		RemoveWidgetFromViewport();
 	
 		ChangePerformanceSettings(/*bEnableLoadingScreen=*/ false);
+
+#if USE_MOVIE_PLAYER
+        if (bCurrentLoadingIsMoviePlayer)
+        {
+            GetMoviePlayer()->ForceCompletion();
+            bCurrentLoadingIsMoviePlayer = false;
+        }
+        else
+#endif
+        {
+            RemoveWidgetFromViewport();
+        }
 
 		// Let observers know that the loading screen is done
 		LoadingScreenVisibilityChanged.Broadcast(/*bIsVisible=*/ false);

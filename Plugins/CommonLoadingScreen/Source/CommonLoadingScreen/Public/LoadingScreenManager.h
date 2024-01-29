@@ -60,6 +60,9 @@ public:
 
 	void RegisterLoadingProcessor(TScriptInterface<ILoadingProcessInterface> Interface);
 	void UnregisterLoadingProcessor(TScriptInterface<ILoadingProcessInterface> Interface);
+
+    UPROPERTY(BlueprintReadOnly)
+    FString LoadingMapName;
 	
 private:
 	void HandlePreLoadMap(const FWorldContext& WorldContext, const FString& MapName);
@@ -124,4 +127,7 @@ private:
 
 	/** True when the loading screen is currently being shown */
 	bool bCurrentlyShowingLoadingScreen = false;
+
+    /** True if the current loading screen was setup with MoviePlayer */
+    bool bCurrentLoadingIsMoviePlayer = false;
 };

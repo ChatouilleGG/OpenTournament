@@ -8,6 +8,7 @@
 #include <Misc/Paths.h>
 
 #include "Slate/SUR_LoadingScreenWidget.h"
+#include "CommonLoadingScreen/Public/LoadingScreenManager.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -15,7 +16,7 @@ void UUR_GameInstance::Init()
 {
 	Super::Init();
 
-	FCoreUObjectDelegates::PreLoadMap.AddUObject(this, &UUR_GameInstance::BeginLoadingScreen);
+	FCoreUObjectDelegates::PreLoadMapWithContext.AddUObject(this, &UUR_GameInstance::BeginLoadingScreen);
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &UUR_GameInstance::EndLoadingScreen);
 }
 
@@ -27,13 +28,13 @@ void UUR_GameInstance::FTest_AddLocalPlayer(int32 ControllerId)
 #endif
 }
 
-void UUR_GameInstance::BeginLoadingScreen(const FString& InMapName)
+void UUR_GameInstance::BeginLoadingScreen(const FWorldContext& WorldCtx, const FString& InMapName)
 {
 	if (!IsRunningDedicatedServer())
 	{
 		FLoadingScreenAttributes LoadingScreen;
 		LoadingScreen.bAutoCompleteWhenLoadingCompletes = false;
-		LoadingScreen.WidgetLoadingScreen = SUR_LoadingScreenWidget::Create(FPaths::GetBaseFilename(InMapName));
+		LoadingScreen.WidgetLoadingScreen = SUR_LoadingScreenWidget::Create(InMapName);
 
 #if !UE_BUILD_SHIPPING
 		LoadingScreen.MinimumLoadingScreenDisplayTime = 2.f;
@@ -45,4 +46,5 @@ void UUR_GameInstance::BeginLoadingScreen(const FString& InMapName)
 
 void UUR_GameInstance::EndLoadingScreen(UWorld* InLoadedWorld)
 {
+    // No need to to anything here unless we set bWaitForManualStop = true
 }

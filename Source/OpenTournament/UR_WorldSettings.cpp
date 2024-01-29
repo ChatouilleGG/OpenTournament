@@ -85,15 +85,38 @@ void AUR_WorldSettings::GetAllMaps(TArray<FMapInfo>& OutMaps)
         for (auto& Data : List)
         {
             FMapInfo& MapInfo = OutMaps.Emplace_GetRef();
-            if (!Data.GetTagValue<FMapInfo>("MapInfo", MapInfo))
-            {
-                // Fallback values
-                MapInfo.DisplayName = Data.AssetName.ToString();
-            }
-            // Dynamic values
-            MapInfo.MapPath = Data.GetSoftObjectPath();
+            GetMapInfoFromAsset(Data, MapInfo);
         }
     }
+}
+
+bool AUR_WorldSettings::GetMapInfoFromPath(FString MapPath, FMapInfo& OutMapInfo)
+{
+    if (auto AssetRegistry = IAssetRegistry::Get())
+    {
+        // GetAssetByObjectPath with FSoftObjectPath requires full object path not just package path
+        if (!MapPath.Contains("."))
+            MapPath = MapPath + "." + FPaths::GetBaseFilename(MapPath);
+
+        const FAssetData& Asset = AssetRegistry->GetAssetByObjectPath(FSoftObjectPath(MapPath));
+        return GetMapInfoFromAsset(Asset, OutMapInfo);
+    }
+    return false;
+}
+
+bool AUR_WorldSettings::GetMapInfoFromAsset(const FAssetData& Asset, FMapInfo& OutMapInfo)
+{
+    bool bResult = Asset.IsValid() && Asset.GetTagValue<FMapInfo>("MapInfo", OutMapInfo);
+
+    if (!bResult)
+    {
+        // Fallback values
+        OutMapInfo.DisplayName = Asset.AssetName.ToString();
+    }
+    // Dynamic values
+    OutMapInfo.MapPath = Asset.GetSoftObjectPath();
+
+    return bResult;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

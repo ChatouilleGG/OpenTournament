@@ -35,7 +35,7 @@ public:
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
     UFUNCTION()
-    virtual void BeginLoadingScreen(const FString& MapName);
+    virtual void BeginLoadingScreen(const FWorldContext& WorldCtx, const FString& MapName);
 
     UFUNCTION()
     virtual void EndLoadingScreen(UWorld* InLoadedWorld);

@@ -7,6 +7,7 @@
 #include "CoreMinimal.h"
 #include "Widgets/SCompoundWidget.h"
 #include "Widgets/DeclarativeSyntaxSupport.h"
+#include "Slate/DeferredCleanupSlateBrush.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -28,4 +29,7 @@ public:
 	{
 		return SNew(SUR_LoadingScreenWidget).MapName(MapName);
 	}
+
+private:
+    TSharedPtr<FDeferredCleanupSlateBrush> ThumbnailBrush;
 };

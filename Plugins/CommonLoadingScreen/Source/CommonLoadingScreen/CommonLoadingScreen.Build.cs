@@ -27,7 +27,8 @@ public class CommonLoadingScreen : ModuleRules
 			{
 				"Core",
 				// ... add other public dependencies that you statically link with here ...
-			}
+                "MoviePlayer",
+            }
 			);
 			
 		
@@ -38,7 +39,7 @@ public class CommonLoadingScreen : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-				"InputCore",
+                "InputCore",
 				"PreLoadScreen",
 				"RenderCore",
 				"DeveloperSettings",

@@ -75,6 +75,12 @@ public:
     UFUNCTION(BlueprintCallable)
     static void GetAllMaps(TArray<FMapInfo>& OutMaps);
 
+    UFUNCTION(BlueprintCallable)
+    static bool GetMapInfoFromPath(FString MapPath, FMapInfo& OutMapInfo);
+
+    UFUNCTION(BlueprintCallable)
+    static bool GetMapInfoFromAsset(const FAssetData& Asset, FMapInfo& OutMapInfo);
+
     // Debug Utility
     UFUNCTION(BlueprintCallable)
     static void DebugDumpAssetTags(const FAssetData& AssetData);
